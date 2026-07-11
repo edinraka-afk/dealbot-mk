@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install playwright playwright-stealth
+          pip install "playwright==1.44.0" "playwright-stealth==1.0.6"
           playwright install chromium --with-deps
 
       - name: Run IP viability probe
