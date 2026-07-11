@@ -4,7 +4,7 @@ import re
 from playwright.async_api import Browser
 
 from .base import (
-    BaseScraper, PRICE_RANGES, browser_context_options,
+    BaseScraper, PRICE_RANGES, browser_context_options, stealth_async,
     parse_price_eur, parse_year, parse_mileage, parse_make_model,
 )
 from . import db as dbmod
@@ -149,6 +149,7 @@ class Pazar3Scraper(BaseScraper):
 
         ctx = await browser.new_context(**browser_context_options())
         pg = await ctx.new_page()
+        await stealth_async(pg)
 
         try:
             for price_from, price_to in PRICE_RANGES:
@@ -208,6 +209,7 @@ class Pazar3Scraper(BaseScraper):
 
         ctx = await browser.new_context(**browser_context_options())
         pg = await ctx.new_page()
+        await stealth_async(pg)
 
         try:
             for page_num in range(1, 11):
