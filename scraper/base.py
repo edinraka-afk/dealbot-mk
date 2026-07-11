@@ -1,6 +1,7 @@
 import os
 import re
 import time
+from urllib.parse import urlparse
 
 from playwright_stealth import stealth_async  # noqa: F401  (re-exported for scrapers)
 
@@ -33,7 +34,16 @@ def browser_context_options():
     opts = dict(BROWSER_CTX)
     proxy_url = os.environ.get("SCRAPING_PROXY_URL", "").strip()
     if proxy_url:
-        opts["proxy"] = {"server": proxy_url}
+        # Playwright needs server separate from credentials.
+        # SCRAPING_PROXY_URL may be http://user:pass@host:port or http://host:port
+        p = urlparse(proxy_url)
+        server = f"{p.scheme}://{p.hostname}:{p.port}"
+        proxy: dict = {"server": server}
+        if p.username:
+            proxy["username"] = p.username
+        if p.password:
+            proxy["password"] = p.password
+        opts["proxy"] = proxy
         # Many scraping proxies do SSL termination; ignore cert errors.
         opts["ignore_https_errors"] = True
     return opts
