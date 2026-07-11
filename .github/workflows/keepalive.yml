@@ -1,0 +1,34 @@
+name: Keepalive
+# GitHub disables scheduled workflows after 60 days without a commit.
+# This job makes a tiny commit every 50 days to keep all workflows alive.
+# Only commits to a sentinel file — nothing functional changes.
+
+on:
+  schedule:
+    - cron: "0 9 1,15 * *"   # twice a month; ensures we never miss the 60-day window
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Use a PAT if GITHUB_TOKEN lacks push rights on a protected branch.
+          # For a public repo the default token is fine.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump keepalive timestamp
+        run: |
+          DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          echo "$DATE" > .keepalive
+          git config user.name  "dealbot-keepalive[bot]"
+          git config user.email "dealbot-keepalive[bot]@users.noreply.github.com"
+          git add .keepalive
+          git diff --cached --quiet || git commit -m "chore: keepalive $DATE"
+          git push

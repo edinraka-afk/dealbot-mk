@@ -1,0 +1,77 @@
+name: Full Crawl (chunked)
+# Runs the scraper in 5-hour chunks until all price ranges for both sites are
+# done. Each job re-triggers itself if work remains (resumable via DB checkpoint).
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write   # needed to dispatch a new run of this same workflow
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 310   # 5h 10m — runner enforced hard stop; scraper exits at 5h
+
+    env:
+      SUPABASE_URL:       ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY:  ${{ secrets.SUPABASE_ANON_KEY }}
+      SCRAPING_PROXY_URL: ${{ secrets.SCRAPING_PROXY_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          playwright install chromium --with-deps
+
+      - name: Run scraper chunk (full mode, both sources)
+        run: python scripts/run_scraper.py --mode full --source all
+
+      - name: Check crawl completion and report counts
+        id: status
+        run: |
+          DONE=$(python scripts/check_crawl_done.py)
+          echo "done=$DONE" >> "$GITHUB_OUTPUT"
+          echo "Crawl done: $DONE"
+        # stderr from check_crawl_done.py prints row counts when done=true
+
+      - name: Re-trigger next chunk (if crawl not complete)
+        if: steps.status.outputs.done == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run full-crawl.yml
+          echo "Triggered next crawl chunk."
+
+      - name: Announce completion
+        if: steps.status.outputs.done == 'true'
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: |
+          python - <<'EOF'
+          import os, sys, requests
+          sys.path.insert(0, ".")
+          from scraper.db import get_client, count_listings
+          db = get_client()
+          r5 = count_listings(db, "reklama5")
+          p3 = count_listings(db, "pazar3")
+          msg = (
+              "DealBot MK — full crawl COMPLETE\n"
+              f"reklama5: {r5:,} listings\n"
+              f"pazar3:   {p3:,} listings"
+          )
+          print(msg)
+          requests.post(
+              f"https://api.telegram.org/bot{os.environ['TELEGRAM_BOT_TOKEN']}/sendMessage",
+              json={"chat_id": os.environ["TELEGRAM_CHAT_ID"], "text": msg},
+              timeout=10,
+          )
+          EOF

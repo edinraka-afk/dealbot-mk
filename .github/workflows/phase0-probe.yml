@@ -1,0 +1,41 @@
+name: Phase 0 — IP Viability Probe
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "scripts/probe.py"
+      - ".github/workflows/phase0-probe.yml"
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install playwright
+          playwright install chromium --with-deps
+
+      - name: Run IP viability probe
+        # SCRAPING_PROXY_URL is intentionally unset here so we test raw GitHub IPs.
+        # If this step exits 1, add SCRAPING_PROXY_URL to repo secrets and re-run.
+        run: python scripts/probe.py
+
+      - name: Report proxy guidance on failure
+        if: failure()
+        run: |
+          echo "===================================================="
+          echo "Phase 0 FAILED from GitHub IPs."
+          echo "Add a free scraping-proxy URL as the repo secret"
+          echo "SCRAPING_PROXY_URL (e.g. ScraperAPI proxy endpoint)"
+          echo "and re-run this workflow."
+          echo "===================================================="
