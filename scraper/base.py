@@ -34,6 +34,8 @@ def browser_context_options():
     proxy_url = os.environ.get("SCRAPING_PROXY_URL", "").strip()
     if proxy_url:
         opts["proxy"] = {"server": proxy_url}
+        # Many scraping proxies do SSL termination; ignore cert errors.
+        opts["ignore_https_errors"] = True
     return opts
 
 

@@ -28,7 +28,8 @@ CHECKS = [
         "site": "pazar3.mk",
         "url": "https://www.pazar3.mk/mk/mali-oglasi/avtomobili/",
         "markers": ["listing", "oglas", "avtomobili", "cena", "price"],
-        "block_markers": ["captcha", "blocked", "forbidden"],
+        # "blocked" deliberately omitted — it appears in FB Pixel JS on legitimate pages
+        "block_markers": ["captcha", "access denied"],
     },
 ]
 
