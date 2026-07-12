@@ -15,7 +15,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from playwright.async_api import async_playwright
-from scraper.db import get_client
+from scraper.db import get_client, reset_checkpoints
 from scraper.reklama5 import Reklama5Scraper
 from scraper.pazar3 import Pazar3Scraper
 
@@ -24,9 +24,16 @@ async def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=["full", "incremental"], required=True)
     parser.add_argument("--source", choices=["reklama5", "pazar3", "all"], default="all")
+    parser.add_argument("--reset-checkpoints", action="store_true",
+                        help="Delete all crawl checkpoints before starting")
     args = parser.parse_args()
 
     db = get_client()
+
+    if args.reset_checkpoints:
+        print("Resetting crawl checkpoints...")
+        reset_checkpoints(db)
+        print("Checkpoints cleared.")
     start_time = time.time()
 
     async with async_playwright() as p:

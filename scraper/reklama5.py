@@ -99,8 +99,8 @@ async def _extract(cell) -> dict | None:
 
 async def _scrape_page(page, url: str) -> list[dict]:
     try:
-        await page.goto(url, wait_until="domcontentloaded", timeout=30_000)
-        await page.wait_for_timeout(2_000)
+        await page.goto(url, wait_until="domcontentloaded", timeout=120_000)
+        await page.wait_for_timeout(10_000)
     except Exception as e:
         print(f"[reklama5] load error {url}: {e}")
         return []
@@ -110,6 +110,13 @@ async def _scrape_page(page, url: str) -> list[dict]:
     )
     if not cells:
         cells = await page.query_selector_all("a[href*='/Oglas/']")
+    if not cells:
+        cells = await page.query_selector_all("a[href*='/AdDetails']")
+
+    if not cells:
+        html = await page.content()
+        print(f"[reklama5] WARNING: 0 cells found on {url}")
+        print(f"[reklama5] HTML snippet: {html[:3000].replace(chr(10), ' ')}")
 
     results = []
     for cell in cells:

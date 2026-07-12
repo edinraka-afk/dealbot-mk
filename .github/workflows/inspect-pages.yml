@@ -1,0 +1,28 @@
+name: Inspect Pages — DOM Structure
+
+on:
+  workflow_dispatch:
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      SCRAPING_PROXY_URL: ${{ secrets.SCRAPING_PROXY_URL }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install "playwright==1.61.0" "playwright-stealth==1.0.6"
+          playwright install chromium --with-deps
+
+      - name: Inspect listing pages
+        run: python scripts/inspect_pages.py

@@ -4,6 +4,11 @@ name: Full Crawl (chunked)
 
 on:
   workflow_dispatch:
+    inputs:
+      reset_checkpoints:
+        description: "Clear all crawl checkpoints before starting (use for a fresh full crawl)"
+        required: false
+        default: "false"
 
 permissions:
   actions: write   # needed to dispatch a new run of this same workflow
@@ -32,7 +37,12 @@ jobs:
           playwright install chromium --with-deps
 
       - name: Run scraper chunk (full mode, both sources)
-        run: python scripts/run_scraper.py --mode full --source all
+        run: |
+          RESET_FLAG=""
+          if [ "${{ github.event.inputs.reset_checkpoints }}" = "true" ]; then
+            RESET_FLAG="--reset-checkpoints"
+          fi
+          python scripts/run_scraper.py --mode full --source all $RESET_FLAG
 
       - name: Check crawl completion and report counts
         id: status

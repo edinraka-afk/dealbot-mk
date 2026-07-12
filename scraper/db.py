@@ -93,6 +93,11 @@ def get_unalerted_deals(client: Client) -> list[dict]:
     ).data
 
 
+def reset_checkpoints(client: Client) -> None:
+    """Delete all crawl checkpoints — use before a fresh full crawl."""
+    client.table("crawl_checkpoints").delete().neq("id", 0).execute()
+
+
 def mark_alerted(client: Client, listing_id_db: int) -> None:
     client.table("listings").update(
         {"alerted_at": datetime.now(timezone.utc).isoformat()}

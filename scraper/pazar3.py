@@ -124,8 +124,14 @@ async def _scrape_page(page, url: str) -> list[dict]:
     if not cells:
         cells = await page.query_selector_all("article, .card, [class*='oglas']")
     if not cells:
-        # Last-resort: any anchors that look like listing URLs
         cells = await page.query_selector_all("a[href*='/oglas/']")
+    if not cells:
+        cells = await page.query_selector_all("[class*='listing'], [class*='product'], [class*='item']")
+
+    if not cells:
+        html = await page.content()
+        print(f"[pazar3] WARNING: 0 cells found on {url}")
+        print(f"[pazar3] HTML snippet: {html[:3000].replace(chr(10), ' ')}")
 
     results = []
     for cell in cells:
