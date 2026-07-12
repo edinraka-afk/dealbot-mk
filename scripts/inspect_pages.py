@@ -25,7 +25,7 @@ SITES = [
     },
     {
         "site": "pazar3.mk",
-        "url": "https://www.pazar3.mk/mk/mali-oglasi/avtomobili/",
+        "url": "https://www.pazar3.mk/oglasi/vozila/avtomobili",
         "use_proxy": False,
         "timeout_ms": 30_000,
         "wait_ms": 3_000,

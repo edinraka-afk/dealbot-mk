@@ -9,8 +9,7 @@ from .base import (
 )
 from . import db as dbmod
 
-# pazar3 serves both /mk/ (Macedonian) and /en/ language variants.
-_BASE_SEARCH = "https://www.pazar3.mk/mk/mali-oglasi/avtomobili/"
+_BASE_SEARCH = "https://www.pazar3.mk/oglasi/vozila/avtomobili"
 
 
 def _build_url(price_from: int, price_to: int | None, page: int) -> str:
