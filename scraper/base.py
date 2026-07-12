@@ -37,7 +37,11 @@ def browser_context_options():
         # Diagnostics (no credentials printed)
         print(f"[proxy_debug] len={len(proxy_url)} starts_http={proxy_url.startswith('http')} has_at={'@' in proxy_url}")
 
-        # Ensure scheme is present for urlparse to work correctly
+        # If there's no URL structure, assume it's a bare ScraperAPI API key
+        if "://" not in proxy_url and "@" not in proxy_url:
+            print("[proxy] bare API key detected — constructing ScraperAPI proxy URL")
+            proxy_url = f"http://scraperapi:{proxy_url}@proxy-server.scraperapi.com:8001"
+
         raw = proxy_url if "://" in proxy_url else f"http://{proxy_url}"
         p = urlparse(raw)
 
