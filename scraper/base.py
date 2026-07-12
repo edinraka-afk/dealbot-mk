@@ -34,10 +34,13 @@ def browser_context_options():
     opts = dict(BROWSER_CTX)
     proxy_url = os.environ.get("SCRAPING_PROXY_URL", "").strip()
     if proxy_url:
-        # Playwright needs credentials separate from the server URL.
-        # Input: http://user:pass@host:port  OR  http://host:port
-        p = urlparse(proxy_url)
-        # Build clean server (scheme + host + optional port)
+        # Diagnostics (no credentials printed)
+        print(f"[proxy_debug] len={len(proxy_url)} starts_http={proxy_url.startswith('http')} has_at={'@' in proxy_url}")
+
+        # Ensure scheme is present for urlparse to work correctly
+        raw = proxy_url if "://" in proxy_url else f"http://{proxy_url}"
+        p = urlparse(raw)
+
         host = p.hostname or ""
         if p.port:
             server = f"{p.scheme}://{host}:{p.port}"
