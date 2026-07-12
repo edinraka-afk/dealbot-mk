@@ -30,37 +30,42 @@ PRICE_RANGES = [
 MAX_RUNTIME_SECONDS = 5 * 3600  # stop well before the 6-hour GitHub cap
 
 
-def browser_context_options():
+def _resolve_proxy() -> dict | None:
+    """Return a Playwright proxy dict from SCRAPING_PROXY_URL, or None."""
+    raw = os.environ.get("SCRAPING_PROXY_URL", "").strip()
+    if not raw:
+        return None
+    print(f"[proxy_debug] len={len(raw)} starts_http={raw.startswith('http')} has_at={'@' in raw}")
+    # Accept bare ScraperAPI API key (no URL structure)
+    if "://" not in raw and "@" not in raw:
+        print("[proxy] bare API key — constructing ScraperAPI proxy URL")
+        raw = f"http://scraperapi:{raw}@proxy-server.scraperapi.com:8001"
+    if "://" not in raw:
+        raw = f"http://{raw}"
+    p = urlparse(raw)
+    host = p.hostname or ""
+    server = f"{p.scheme}://{host}:{p.port}" if p.port else f"{p.scheme}://{host}"
+    print(f"[proxy] server={server} user={'set' if p.username else 'none'}")
+    d: dict = {"server": server}
+    if p.username:
+        d["username"] = p.username
+    if p.password:
+        d["password"] = p.password
+    return d
+
+
+def browser_context_options(use_proxy: bool = False) -> dict:
+    """Return Playwright new_context kwargs.
+
+    use_proxy=True applies SCRAPING_PROXY_URL (for sites that block Azure IPs).
+    use_proxy=False gives a direct connection (for sites that work without proxy).
+    """
     opts = dict(BROWSER_CTX)
-    proxy_url = os.environ.get("SCRAPING_PROXY_URL", "").strip()
-    if proxy_url:
-        # Diagnostics (no credentials printed)
-        print(f"[proxy_debug] len={len(proxy_url)} starts_http={proxy_url.startswith('http')} has_at={'@' in proxy_url}")
-
-        # If there's no URL structure, assume it's a bare ScraperAPI API key
-        if "://" not in proxy_url and "@" not in proxy_url:
-            print("[proxy] bare API key detected — constructing ScraperAPI proxy URL")
-            proxy_url = f"http://scraperapi:{proxy_url}@proxy-server.scraperapi.com:8001"
-
-        raw = proxy_url if "://" in proxy_url else f"http://{proxy_url}"
-        p = urlparse(raw)
-
-        host = p.hostname or ""
-        if p.port:
-            server = f"{p.scheme}://{host}:{p.port}"
-        else:
-            server = f"{p.scheme}://{host}"
-
-        print(f"[proxy] server={server} user={'set' if p.username else 'none'}")
-
-        proxy: dict = {"server": server}
-        if p.username:
-            proxy["username"] = p.username
-        if p.password:
-            proxy["password"] = p.password
-        opts["proxy"] = proxy
-        # Many scraping proxies terminate SSL; ignore cert errors.
-        opts["ignore_https_errors"] = True
+    if use_proxy:
+        proxy = _resolve_proxy()
+        if proxy:
+            opts["proxy"] = proxy
+            opts["ignore_https_errors"] = True
     return opts
 
 

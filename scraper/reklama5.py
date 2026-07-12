@@ -131,7 +131,7 @@ class Reklama5Scraper(BaseScraper):
         self.known_ids = dbmod.get_known_ids(self.db, self.source)
         print(f"[reklama5] {len(self.known_ids)} known IDs")
 
-        ctx = await browser.new_context(**browser_context_options())
+        ctx = await browser.new_context(**browser_context_options(use_proxy=True))
         pg = await ctx.new_page()
         await stealth_async(pg)
 
@@ -191,7 +191,7 @@ class Reklama5Scraper(BaseScraper):
         print("[reklama5] incremental crawl starting")
         self.known_ids = dbmod.get_known_ids(self.db, self.source)
 
-        ctx = await browser.new_context(**browser_context_options())
+        ctx = await browser.new_context(**browser_context_options(use_proxy=True))
         pg = await ctx.new_page()
         await stealth_async(pg)
 

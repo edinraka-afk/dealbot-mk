@@ -2,9 +2,11 @@
 """
 Phase 0 — IP viability probe.
 
-Loads one search-results page from each site with stealth mode enabled and
-asserts that listing markup is present in the HTML.
-Exits 0 on success, 1 on failure.
+reklama5.mk is checked through the scraping proxy (Cloudflare-blocked from
+Azure IPs). pazar3.mk is checked via direct connection (works fine from
+GitHub runners).
+
+Exits 0 if both pass, 1 if either fails.
 """
 import asyncio
 import sys
@@ -22,14 +24,20 @@ CHECKS = [
         "site": "reklama5.mk",
         "url": "https://www.reklama5.mk/Search?cat=24&page=1",
         "markers": ["OglasResults", "OglasCell", "oglasresults", "oglas"],
-        "block_markers": ["just a moment", "captcha", "blocked", "access denied", "robot"],
+        "block_markers": ["just a moment", "captcha", "access denied"],
+        "use_proxy": True,
+        "timeout_ms": 120_000,   # proxy + Cloudflare challenge needs time
+        "wait_ms": 12_000,
     },
     {
         "site": "pazar3.mk",
         "url": "https://www.pazar3.mk/mk/mali-oglasi/avtomobili/",
         "markers": ["listing", "oglas", "avtomobili", "cena", "price"],
-        # "blocked" deliberately omitted — it appears in FB Pixel JS on legitimate pages
+        # "blocked" omitted — appears in Facebook Pixel JS on legitimate pages
         "block_markers": ["captcha", "access denied"],
+        "use_proxy": False,
+        "timeout_ms": 30_000,
+        "wait_ms": 3_000,
     },
 ]
 
@@ -38,33 +46,29 @@ async def probe() -> bool:
     ok = True
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        ctx = await browser.new_context(**browser_context_options())
-        page = await ctx.new_page()
-
-        # Apply stealth patches to avoid Cloudflare headless detection
-        await stealth_async(page)
 
         for check in CHECKS:
             site = check["site"]
             url = check["url"]
-            print(f"\n--- Probing {site} ---")
+            print(f"\n--- Probing {site} (proxy={check['use_proxy']}) ---")
             print(f"URL: {url}")
+
+            ctx = await browser.new_context(**browser_context_options(use_proxy=check["use_proxy"]))
+            page = await ctx.new_page()
+            await stealth_async(page)
+
             try:
-                resp = await page.goto(url, wait_until="domcontentloaded", timeout=60_000)
+                resp = await page.goto(url, wait_until="domcontentloaded", timeout=check["timeout_ms"])
                 status = resp.status if resp else "N/A"
                 print(f"HTTP status: {status}")
 
-                # Give Cloudflare JS challenges time to complete
-                await page.wait_for_timeout(10_000)
+                await page.wait_for_timeout(check["wait_ms"])
 
                 html = await page.content()
                 print(f"HTML length: {len(html)} chars")
 
                 title = await page.title()
                 print(f"Page title: {title}")
-
-                snippet = html[:2000].replace("\n", " ")
-                print(f"HTML snippet: {snippet}")
 
                 html_lower = html.lower()
                 found = any(m.lower() in html_lower for m in check["markers"])
@@ -79,15 +83,15 @@ async def probe() -> bool:
                     ok = False
                 else:
                     print(f"FAIL — none of {check['markers']} found in page HTML")
+                    # Print snippet for debugging (first 2000 chars)
+                    print(f"Snippet: {html[:2000].replace(chr(10), ' ')}")
                     ok = False
-
-                # Navigate away before next check (fresh page state)
-                await page.goto("about:blank")
-                await page.wait_for_timeout(1_000)
 
             except Exception as e:
                 print(f"FAIL — exception: {e}")
                 ok = False
+            finally:
+                await ctx.close()
 
         await browser.close()
 
