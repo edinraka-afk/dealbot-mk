@@ -1,0 +1,26 @@
+name: Test Crawlbase API — single request
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      CRAWLBASE_JS_TOKEN: ${{ secrets.CRAWLBASE_JS_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install requests
+        run: pip install requests==2.31.0
+
+      - name: Run single Crawlbase API test
+        run: python scripts/test_crawlbase_api.py
