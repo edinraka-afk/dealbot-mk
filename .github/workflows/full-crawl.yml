@@ -19,9 +19,8 @@ jobs:
     timeout-minutes: 310   # 5h 10m — runner enforced hard stop; scraper exits at 5h
 
     env:
-      SUPABASE_URL:       ${{ secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY:  ${{ secrets.SUPABASE_ANON_KEY }}
-      SCRAPING_PROXY_URL: ${{ secrets.SCRAPING_PROXY_URL }}
+      SUPABASE_URL:      ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
 
     steps:
       - uses: actions/checkout@v4
@@ -36,13 +35,13 @@ jobs:
           pip install -r requirements.txt
           playwright install chromium --with-deps
 
-      - name: Run scraper chunk (full mode, both sources)
+      - name: Run scraper chunk (pazar3 full crawl)
         run: |
           RESET_FLAG=""
           if [ "${{ github.event.inputs.reset_checkpoints }}" = "true" ]; then
             RESET_FLAG="--reset-checkpoints"
           fi
-          python scripts/run_scraper.py --mode full --source all $RESET_FLAG
+          python scripts/run_scraper.py --mode full --source pazar3 $RESET_FLAG
 
       - name: Check crawl completion and report counts
         id: status
@@ -71,12 +70,10 @@ jobs:
           sys.path.insert(0, ".")
           from scraper.db import get_client, count_listings
           db = get_client()
-          r5 = count_listings(db, "reklama5")
           p3 = count_listings(db, "pazar3")
           msg = (
-              "DealBot MK — full crawl COMPLETE\n"
-              f"reklama5: {r5:,} listings\n"
-              f"pazar3:   {p3:,} listings"
+              "DealBot MK — pazar3 full crawl COMPLETE\n"
+              f"pazar3: {p3:,} listings"
           )
           print(msg)
           requests.post(

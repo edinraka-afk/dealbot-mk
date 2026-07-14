@@ -42,12 +42,11 @@ def main():
         else:
             print(f"Alert failed for listing id={deal['id']}")
 
-    r5 = count_listings(db, "reklama5")
     p3 = count_listings(db, "pazar3")
-    print(f"DB totals — reklama5: {r5:,}  pazar3: {p3:,}")
+    print(f"DB total — pazar3: {p3:,}")
 
     if sent > 0:
-        send_summary(sent, r5, p3)
+        send_summary(sent, p3)
 
 
 if __name__ == "__main__":

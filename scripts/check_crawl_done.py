@@ -14,7 +14,7 @@ from scraper.db import get_client, all_ranges_done, count_listings
 
 def main():
     db = get_client()
-    done = all_ranges_done(db)
+    done = all_ranges_done(db, sources=("pazar3",))
     print("true" if done else "false")
     if done:
         r5 = count_listings(db, "reklama5")

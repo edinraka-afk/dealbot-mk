@@ -29,8 +29,9 @@ def _incremental_url(page: int) -> str:
 
 
 def _listing_id_from_url(href: str) -> str | None:
-    # e.g. /mk/oglas/avtomobili/123456/bmw-320d/ or /oglas/123456/
-    m = re.search(r"/(\d{5,})/", href)
+    # e.g. /oglas/vozila/avtomobili/bmw/320d/prodazba/skopje/centar/slug/1234567
+    # ID is the last numeric segment; may or may not have a trailing slash.
+    m = re.search(r"/(\d{5,})(?:/|$)", href)
     return m.group(1) if m else None
 
 
@@ -116,16 +117,12 @@ async def _scrape_page(page, url: str) -> list[dict]:
         print(f"[pazar3] load error {url}: {e}")
         return []
 
-    # Try progressively broader selectors
-    cells = await page.query_selector_all(
-        ".listing-item, .ad-item, [class*='listing-item'], [class*='ad-item']"
-    )
+    # Confirmed by DOM inspection: listing cards are <a href*='/oglas/'> anchors.
+    cells = await page.query_selector_all("a[href*='/oglas/']")
     if not cells:
-        cells = await page.query_selector_all("article, .card, [class*='oglas']")
-    if not cells:
-        cells = await page.query_selector_all("a[href*='/oglas/']")
-    if not cells:
-        cells = await page.query_selector_all("[class*='listing'], [class*='product'], [class*='item']")
+        cells = await page.query_selector_all(
+            ".listing-item, .ad-item, article, [class*='listing-item']"
+        )
 
     if not cells:
         html = await page.content()

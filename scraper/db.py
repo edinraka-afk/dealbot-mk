@@ -68,9 +68,9 @@ def mark_checkpoint_done(client: Client, source: str, crawl_type: str, price_fro
     q.execute()
 
 
-def all_ranges_done(client: Client) -> bool:
+def all_ranges_done(client: Client, sources: tuple = ("reklama5", "pazar3")) -> bool:
     from scraper.base import PRICE_RANGES
-    for source in ("reklama5", "pazar3"):
+    for source in sources:
         for pf, pt in PRICE_RANGES:
             cp = get_checkpoint(client, source, "full", pf, pt)
             if not cp or cp["status"] != "done":

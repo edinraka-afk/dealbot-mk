@@ -32,13 +32,13 @@ def send(listing: dict) -> bool:
     return r.ok
 
 
-def send_summary(new_count: int, reklama5_total: int, pazar3_total: int) -> bool:
+def send_summary(new_count: int, pazar3_total: int) -> bool:
     token = os.environ["TELEGRAM_BOT_TOKEN"]
     chat_id = os.environ["TELEGRAM_CHAT_ID"]
     text = (
         f"DealBot MK — incremental run complete\n"
         f"New listings: {new_count}\n"
-        f"DB totals: reklama5={reklama5_total:,} | pazar3={pazar3_total:,}"
+        f"pazar3 total: {pazar3_total:,}"
     )
     r = requests.post(
         _API.format(token=token),

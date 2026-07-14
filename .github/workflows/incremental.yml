@@ -12,11 +12,10 @@ jobs:
     timeout-minutes: 30
 
     env:
-      SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
-      SUPABASE_ANON_KEY:   ${{ secrets.SUPABASE_ANON_KEY }}
-      TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
-      SCRAPING_PROXY_URL:  ${{ secrets.SCRAPING_PROXY_URL }}
+      SUPABASE_URL:       ${{ secrets.SUPABASE_URL }}
+      SUPABASE_ANON_KEY:  ${{ secrets.SUPABASE_ANON_KEY }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
 
     steps:
       - uses: actions/checkout@v4
@@ -32,7 +31,7 @@ jobs:
           playwright install chromium --with-deps
 
       - name: Scrape new listings (incremental)
-        run: python scripts/run_scraper.py --mode incremental --source all
+        run: python scripts/run_scraper.py --mode incremental --source pazar3
 
       - name: Run analysis and send deal alerts
         run: python scripts/run_analysis.py --threshold 0.15 --min-comp 5 --max-alerts 10
